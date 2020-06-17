@@ -72,8 +72,7 @@ namespace ApiWebScrapper.Service
             else
             {
                 //A file of a repository can be very large. This prevent loading the file contents that is not necessary.
-                //doc = await GetSiteContents(url, $"<div itemprop=\"text\"");
-                doc = await GetSiteContents(url);
+                doc = await GetSiteContents(url, $"<div itemprop=\"text\"");
                 ProcessFile(doc);
             }
         }

@@ -10,11 +10,14 @@ namespace ApiWebScrapper.Test
 {
     public class GitHubScrapperTest
     {
+        /// <summary>
+        /// Test another repository i have
+        /// </summary>
         [Fact]
         public async Task TestAPI()
         {
             // Arrange
-            var testURL = new Repository{ Url = "https://github.com/jpgod/ITIXteste" };
+            var testURL = new Repository{ Url = "https://github.com/jpgod/TestSite" };
 
             // Act  
             var controller = new GitHubController();

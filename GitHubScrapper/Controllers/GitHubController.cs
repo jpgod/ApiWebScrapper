@@ -11,7 +11,6 @@ namespace ApiWebScrapper.Controllers
     [ApiController, Route("api/[controller]")]
     public class GitHubController : ControllerBase
     {
-
         public GitHubController() {}
 
         /// <summary>
@@ -29,11 +28,12 @@ namespace ApiWebScrapper.Controllers
             Tuple<string,HtmlDocument> validate = await parser.ValidateAndLoadSite(url.Url);
             if (!string.IsNullOrEmpty(validate.Item1)) return BadRequest(validate.Item1);
 
-            //Start the parsing with the main repository directory
             try
             {
+                //Start the parsing with the main repository directory
                 await parser.ProcessDirectory(validate.Item2);
 
+                //Get the results
                 var results = parser.FormatResults();
 
                 return new ObjectResult(results);
@@ -41,7 +41,6 @@ namespace ApiWebScrapper.Controllers
             catch (Exception ex)
             {
                 return new StatusCodeResult(StatusCodes.Status500InternalServerError);
-
             }
         }
     }
