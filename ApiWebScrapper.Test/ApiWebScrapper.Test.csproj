@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GitHubScrapper\ApiWebScrapper.csproj" />
+    <ProjectReference Include="..\ApiWebScrapper.Api\ApiWebScrapper.csproj" />
   </ItemGroup>
 
 </Project>
