@@ -1,9 +1,7 @@
 ﻿using ApiWebScrapper.Service.Interface;
 using HtmlAgilityPack;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -40,7 +38,7 @@ namespace ApiWebScrapper.Service
         /// Read the site from given URL to html document until find a specific text
         /// This is usefull to prevent load large pages if not needed all the content
         /// </summary>
-        public async Task<HtmlDocument> GetSiteContents(string url, string endText)
+        public async Task<HtmlDocument> GetSiteContents(string url, string textToFinish)
         {
             StringBuilder html = new StringBuilder();
 
@@ -52,7 +50,7 @@ namespace ApiWebScrapper.Service
                 {
                     string line = await sr.ReadLineAsync();
                     html.Append(line);
-                    if (line.Contains(endText)) break;
+                    if (line.Contains(textToFinish)) break;
                 }
             }
 
@@ -72,6 +70,6 @@ namespace ApiWebScrapper.Service
             return url.StartsWith(URL_BASE);
         }
 
-        public abstract Task<Tuple<string, HtmlDocument>> ValidateAndLoadSite(string url);
+        public abstract Task<Tuple<string, string>> ValidateAndLoadSite(string url);
     }
 }

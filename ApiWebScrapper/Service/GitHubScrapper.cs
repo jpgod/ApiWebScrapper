@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 using static ApiWebScrapper.Helpers.Enums;
 using ByteSizeLib;
 using System.Globalization;
+using System.Net;
+using System.IO.Compression;
+using ApiWebScrapper.Helpers;
 
 namespace ApiWebScrapper.Service
 {
@@ -32,30 +35,77 @@ namespace ApiWebScrapper.Service
         /// <param name="url"></param>
         /// <param name="document"></param>
         /// <returns></returns>
-        public override async Task<Tuple<string, HtmlDocument>> ValidateAndLoadSite(string url)
+        public override async Task<Tuple<string, string>> ValidateAndLoadSite(string url)
         {
-            string result = string.Empty;
-            HtmlDocument document = new HtmlDocument();
+            string result = string.Empty; string urlZIP = string.Empty;
 
-            //Validate the URL 
-            if (!ValidateSite(url))
-                result = Messages.GitHubNotFound;
-            else
+            try
             {
-                //Proceed to load the contents of the repository
-                document = await GetSiteContents(url);
+                //Validate the URL 
+                if (!ValidateSite(url))
+                    result = Messages.GitHubNotFound;
+                else
+                {
+                    //Proceed to load the contents of the repository
+                    HtmlDocument document = await GetSiteContents(url);
 
-                //Validate if contents is a valid repository
-                bool isRepository = document.DocumentNode.Descendants("tbody")
-                    .Select(y => y.Descendants("div")
-                    .Where(x => x.Attributes["class"].Value == "repository-content")).Any();
+                    //Validate if contents is a valid repository
+                    var indexZIP = document.DocumentNode.OuterHtml.IndexOf("DOWNLOAD_ZIP");
 
-                if(!isRepository) result = Messages.InvalidRepository;
+                    if (indexZIP <= 0)
+                        result = Messages.InvalidRepository;
+                    else
+                    {
+                        //Recovery the URL of ZIP file
+                        var index2 = document.DocumentNode.OuterHtml.IndexOf(">Download ZIP");
+                        urlZIP = document.DocumentNode.OuterHtml.Substring(indexZIP, (index2 - indexZIP) - 1);
+                        urlZIP = urlZIP.Substring(urlZIP.IndexOf("href=") + 6);
+                    }
+                }
+
+            }
+            catch (WebException)
+            {
+                result = Messages.GitHubNotFound;
             }
 
-            return new Tuple<string, HtmlDocument>(result, document);
+            return new Tuple<string, string>(result, urlZIP);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="urlZIP"></param>
+        public void ProcessZipFile(string urlZIP)
+        {
+            //Download the ZIP from repository and extract its contents
+            var repoDirectory = ExtractFiles(urlZIP);
+            var fileList = Directory.GetFiles(repoDirectory, "*", SearchOption.AllDirectories).ToList();
+
+            //Iterate the list of files from the repository
+            foreach (var fileName in fileList)
+            {
+                FileInfo fileInfo = new FileInfo(fileName);
+
+                var fileLength = fileInfo.Length;
+                var extension = string.IsNullOrEmpty(fileInfo.Extension) ? fileInfo.Name : fileInfo.Extension.ToUpper(); //Some files dont have a extension, use the filename instead
+                var fileLines = Utils.TotalLines(fileName, extension);
+
+                //Save the data in the array of results
+                GitHubResults result = new GitHubResults()
+                {
+                    Extension = extension,
+                    TotalBytes = fileLength,
+                    TotalLines = fileLines
+                };
+
+                Results.Add(result);
+            }
+
+            Directory.Delete(repoDirectory, true);
+        }
+
+        #region Old scrapper Methods
         public async Task Navigate(string url, LinkType type)
         {
             //Necessary to append the base GitHub URL to the link of the element.
@@ -169,7 +219,44 @@ namespace ApiWebScrapper.Service
             return formattedResults;
         }
 
+        #endregion
+
         #region Private methods
+
+        /// <summary>
+        /// Download and extract the repository zip file
+        /// </summary>
+        /// <param name="urlZIP"></param>
+        /// <returns></returns>
+        private string ExtractFiles(string urlZIP)
+        {
+            string baseDirectory = Directory.GetCurrentDirectory() + "\\Temp" ;
+
+            string repoDirectory = @$"{baseDirectory}\{DateTime.Now.Ticks}";
+            string zipFile = repoDirectory + "\\temp.zip";
+
+            if (!Directory.Exists(repoDirectory))
+            {
+                Directory.CreateDirectory(repoDirectory);
+            }
+
+            //Necessary to append the base GitHub URL to the link of the element.
+            if (!urlZIP.StartsWith(URL_BASE))
+                urlZIP = URL_BASE + urlZIP;
+
+            //download the zip file with the contents of the repo
+            using (var client = new WebClient())
+            {
+                client.DownloadFile(urlZIP, zipFile);
+            }
+
+            FileInfo zipFileInfo = new FileInfo(zipFile);
+            ZipFile.ExtractToDirectory(zipFile, repoDirectory);
+            zipFileInfo.Delete();
+
+            return repoDirectory;
+        }
+
         /// <summary>
         /// Get the extension of the filename.
         /// </summary>

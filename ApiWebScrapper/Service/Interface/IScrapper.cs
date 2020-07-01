@@ -12,6 +12,6 @@ namespace ApiWebScrapper.Service.Interface
 
         public bool ValidateSite(string url);
 
-        public Task<Tuple<string, HtmlDocument>> ValidateAndLoadSite(string url);
+        public Task<Tuple<string, string>> ValidateAndLoadSite(string url);
     }
 }

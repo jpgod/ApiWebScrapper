@@ -25,13 +25,13 @@ namespace ApiWebScrapper.Controllers
             var parser = new GitHubScrapper();
 
             //Validate if url is a valid github repository
-            Tuple<string,HtmlDocument> validate = await parser.ValidateAndLoadSite(url.Url);
+            Tuple<string, string> validate = await parser.ValidateAndLoadSite(url.Url);
             if (!string.IsNullOrEmpty(validate.Item1)) return BadRequest(validate.Item1);
 
             try
             {
-                //Start the parsing with the main repository directory
-                await parser.ProcessDirectory(validate.Item2);
+                //Process the zip file with the repository contents
+                parser.ProcessZipFile(validate.Item2);
 
                 //Get the results
                 var results = parser.FormatResults();
