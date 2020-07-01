@@ -8,4 +8,4 @@ Have one public API: Parser
 - No authentication: 
 
 Usage:
-- Entry JSON { "url": "https://github.com/repitoryURL" }
+- Input JSON { "url": "https://github.com/repositoryURL" }
